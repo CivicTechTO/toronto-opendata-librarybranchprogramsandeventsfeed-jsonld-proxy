@@ -1,0 +1,35 @@
+name: Update Events JSON-LD
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 6:00 AM UTC
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧾 Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: 📦 Upgrade pip & install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: ⚙️ Run JSON-LD Generator
+        run: python scripts/generate_jsonld.py
+
+      - name: 📤 Commit & Push Changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add docs/events.jsonld
+          git commit -m "🔄 Daily JSON-LD update" || echo "No changes to commit"
+          git push

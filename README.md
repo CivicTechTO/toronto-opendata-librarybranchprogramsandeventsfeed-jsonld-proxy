@@ -13,22 +13,32 @@ The result is a free, publicly hosted JSON-LD feed that enables developers, sear
 
 - Demonstrates how open data can power real-world tools with **minimal cost and friction**.
 - Enables **events aggregators, civic apps, and open data projects** to work with a common standard and data ontology.
-- Bridges the gap between *open datasets* and *programmable cities*.
+- Bridges the gap between _open datasets_ and _programmable cities_.
 
 ## Orientation
 
 ### Build
 
-> _(Coming soon)_  
-> Step-by-step instructions on how to build and run the service locally or in another repo.
+**Install dependencies**
+
+```zsh
+pip install -r requirements.txt
+```
+
+**Generate the JSON-LD**
+
+```zsh
+python scripts/generate_jsonld.py
+```
 
 ### Usage
 
-> _(Coming soon)_  
-> Documentation on how to:
-> - Access JSON-LD files
-> - Use GitHub Pages to consume the data
-> - Integrate with apps or schema.org-aware tools
+> _(Coming soon)_
+
+You can use this link directly in:
+
+- Events apps and civic dashboards
+- Schema.org-aware tools and validators
 
 ## About
 
@@ -42,6 +52,7 @@ Built by [@jordyarms](https://github.com/jordyarms)
 Maintained by _(you?)_
 
 Special thanks to:
+
 - [City of Toronto Open Data](https://open.toronto.ca/)
 - PROGRAM: Toronto
 
@@ -49,5 +60,5 @@ Special thanks to:
 
 - **Code** is licensed under the [MIT License](LICENSE).
 - **Source event data** is licensed under the [Open Government Licence – Toronto](https://open.toronto.ca/open-data-licence/).  
-  Please attribute as:  
+  Please attribute as:
   > Contains information licensed under the Open Government Licence – Toronto.
