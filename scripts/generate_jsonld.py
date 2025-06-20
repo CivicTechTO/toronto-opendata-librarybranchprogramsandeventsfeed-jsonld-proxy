@@ -4,7 +4,7 @@ from ckan import get_latest_resource_url, download_resource_data
 from transform import transform_all
 
 # Output path for the JSON-LD file (served via GitHub Pages)
-OUTPUT_PATH = "docs/events.jsonld"
+OUTPUT_PATH = "output/events.jsonld"
 
 
 def save_jsonld(events, path=OUTPUT_PATH):
