@@ -33,9 +33,10 @@ python scripts/generate_jsonld.py
 
 ### Usage
 
-> _(Coming soon)_
+get it at:
+https://civictechto.github.io/toronto-opendata-festivalsandevents-jsonld-proxy/events.jsonld
 
-You can use this link directly in:
+You can use this in:
 
 - Events apps and civic dashboards
 - Schema.org-aware tools and validators
