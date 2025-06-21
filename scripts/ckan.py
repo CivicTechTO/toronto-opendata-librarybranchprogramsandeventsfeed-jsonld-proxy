@@ -30,7 +30,7 @@ def get_latest_resource_url():
     raise RuntimeError("❌ No suitable non-datastore resource found in CKAN package.")
 
 
-def download_resource_data(resource_url, batch_size=500, max_pages=20):
+def download_resource_data(resource_url, batch_size=500, max_pages=1000):
     """
     Download all paginated event data from the resource URL using ?limit and ?offset.
 

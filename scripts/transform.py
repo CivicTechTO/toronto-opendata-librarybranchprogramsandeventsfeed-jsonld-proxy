@@ -1,9 +1,10 @@
 from urllib.parse import urljoin
 from html import unescape
-from utils import extract_geo
+import re
 
 # Used to prepend image URLs if they are relative
-TORONTO_IMAGE_BASE = "https://www.toronto.ca"
+TORONTO_IMAGE_BASE = "https://secure.toronto.ca"
+LOCALITIES = ["Toronto", "North York", "Scarborough", "Etobicoke", "East York", "York"]
 
 
 def transform_event(cal_event):
@@ -41,13 +42,7 @@ def transform_event(cal_event):
         "location": {
             "@type": "Place",
             "name": unescape(location.get("locationName", "Toronto")),
-            "address": {
-                "@type": "PostalAddress",
-                "streetAddress": address,
-                "addressLocality": "Toronto",
-                "addressRegion": "ON",
-                "addressCountry": "CA",
-            },
+            "address": parse_address(address),  # Use utility to parse addres
             "geo": extract_geo(location),  # Optional but added if available
         },
         "description": unescape(evt.get("description", "")),
@@ -100,3 +95,75 @@ def transform_all(raw_events):
     Transform all raw records into JSON-LD Event objects.
     """
     return [transform_event(evt) for evt in raw_events]
+
+
+def parse_address(full_address):
+    """
+    Parse a Toronto address into street, locality, region, and postal code.
+    Uses known localities to split out address components.
+    """
+    if not full_address:
+        return {}
+
+    # Normalize whitespace
+    full_address = full_address.strip()
+
+    # Extract postal code
+    postal_match = re.search(r"\b([A-Z]\d[A-Z])\s?(\d[A-Z]\d)\b", full_address)
+    postal_code = (
+        f"{postal_match.group(1)} {postal_match.group(2)}" if postal_match else None
+    )
+
+    # Try to identify the locality
+    locality = "Toronto"
+    for candidate in LOCALITIES:
+        pattern = r",\s*(" + re.escape(candidate) + r")\b"
+        match = re.search(pattern, full_address)
+        if match:
+            locality = match.group(1)
+            break
+
+    # Extract everything before the matched locality (if possible)
+    if locality and locality in full_address:
+        split_pattern = r"\s*,\s*" + re.escape(locality)
+        parts = re.split(split_pattern, full_address, maxsplit=1)
+        street_address = parts[0].strip() if parts else full_address
+    else:
+        street_address = full_address  # fallback
+
+    return {
+        "@type": "PostalAddress",
+        "streetAddress": street_address,
+        "addressLocality": locality,
+        "addressRegion": "ON",
+        "postalCode": postal_code,
+        "addressCountry": "CA",
+    }
+
+
+def extract_geo(location):
+    """
+    Extract latitude and longitude as a schema.org GeoCoordinates object.
+
+    Args:
+        location (dict): A location object from the raw event data.
+
+    Returns:
+        dict or None: A schema.org-compatible GeoCoordinates block, or None if missing.
+    """
+    coords = location.get("coords")
+
+    # Handle if coords is a list of dicts
+    if isinstance(coords, list) and coords:
+        coords = coords[0]
+
+    # Handle if coords is a single dict
+    if isinstance(coords, dict):
+        return {
+            "@type": "GeoCoordinates",
+            "latitude": coords.get("lat"),
+            "longitude": coords.get("lng"),
+        }
+
+    # Fallback if coords is missing or unrecognized format
+    return None

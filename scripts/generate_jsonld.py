@@ -1,41 +1,84 @@
 import os
 import json
+from datetime import datetime
 from ckan import get_latest_resource_url, download_resource_data
-from transform import transform_all
+from transform import transform_event
 
-# Output path for the JSON-LD file (served via GitHub Pages)
-OUTPUT_PATH = "docs/events.jsonld"
+BASE_PATH = "docs/events"
 
 
-def save_jsonld(events, path=OUTPUT_PATH):
-    """
-    Save a list of JSON-LD event objects to a file.
+def ensure_dir(path):
+    os.makedirs(path, exist_ok=True)
 
-    Args:
-        events (list): The transformed schema.org Event objects.
-        path (str): Path to write the JSON file to (default is docs/events.jsonld).
-    """
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(events, f, indent=2, ensure_ascii=False)
-    print(f"✅ Saved {len(events)} events to {path}")
+
+def event_month(event):
+    try:
+        dt = datetime.fromisoformat(event["startDate"].replace("Z", "+00:00"))
+        return dt.strftime("%Y-%m")
+    except Exception:
+        return None
+
+
+def initialize_streams():
+    return {}
+
+
+def append_event_to_file(event, streams, month):
+    if month not in streams:
+        path = os.path.join(BASE_PATH, f"{month}.jsonld")
+        f = open(path, "w", encoding="utf-8")
+        f.write("[\n")
+        streams[month] = {"file": f, "count": 0}
+
+    stream = streams[month]
+    if stream["count"] > 0:
+        stream["file"].write(",\n")
+    json.dump(event, stream["file"], ensure_ascii=False, indent=2)
+    stream["count"] += 1
+
+
+def finalize_streams(streams):
+    for stream in streams.values():
+        stream["file"].write("\n]\n")
+        stream["file"].close()
+
+
+def write_index_file(available_months):
+    index_path = os.path.join(BASE_PATH, "index.json")
+    index = {
+        "available": sorted(available_months),
+        "latest": max(available_months) if available_months else "",
+    }
+    with open(index_path, "w", encoding="utf-8") as f:
+        json.dump(index, f, indent=2)
+    print(f"📁 Index file written with {len(available_months)} months")
 
 
 def main():
-    print("🚀 Starting JSON-LD generation")
-
-    # Step 1: Get the latest resource URL from CKAN
+    print("🚀 Starting memory-efficient JSON-LD generation")
+    ensure_dir(BASE_PATH)
     resource_url = get_latest_resource_url()
+    raw_events = download_resource_data(resource_url, batch_size=500, max_pages=2000)
 
-    # Step 2: Download all paginated raw data
-    raw_data = download_resource_data(resource_url)
+    streams = initialize_streams()
+    seen_months = set()
+    event_count = 0
 
-    # Step 3: Transform into schema.org/Event format
-    jsonld_events = transform_all(raw_data)
+    for raw in raw_events:
+        try:
+            transformed = transform_event(raw)
+            month = event_month(transformed)
+            if not month:
+                continue
+            append_event_to_file(transformed, streams, month)
+            seen_months.add(month)
+            event_count += 1
+        except Exception as e:
+            print(f"⚠️ Error transforming event: {e}")
 
-    # Step 4: Write output to file
-    save_jsonld(jsonld_events)
-
+    finalize_streams(streams)
+    write_index_file(seen_months)
+    print(f"✅ Written {event_count} events across {len(seen_months)} month files")
     print("🏁 Done.")
 
 
