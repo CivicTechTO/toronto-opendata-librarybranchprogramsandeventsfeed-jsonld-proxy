@@ -1,11 +1,11 @@
-import os
 import json
 from datetime import datetime, timezone
 from glob import glob
 
-INPUT_DIR = "data/daily_jsonl"
-OUTPUT_ALL = "data/all.jsonld"
-OUTPUT_UPCOMING = "data/upcoming.jsonld"
+INPUT_DIR = "docs/daily_jsonl"
+OUTPUT_ALL = "docs/all.jsonld"
+OUTPUT_UPCOMING = "docs/upcoming.jsonld"
+
 
 def load_all_events():
     events = []
@@ -19,9 +19,11 @@ def load_all_events():
                     continue
     return events
 
+
 def save_jsonld(events, output_path):
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(events, f, ensure_ascii=False, indent=2)
+
 
 def main():
     print("🔄 Building merged JSON-LD files...")
@@ -34,6 +36,7 @@ def main():
     upcoming = [e for e in all_events if e.get("startDate") >= now]
     save_jsonld(upcoming, OUTPUT_UPCOMING)
     print(f"✅ Wrote {len(upcoming)} upcoming events to {OUTPUT_UPCOMING}")
+
 
 if __name__ == "__main__":
     main()

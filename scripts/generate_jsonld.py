@@ -1,17 +1,18 @@
 import os
 import json
-from datetime import datetime
 from ckan import get_latest_resource_url, stream_resource_data
 from transform import transform_event
 import hashlib
 
-OUTPUT_DIR = "data/daily_jsonl"
+OUTPUT_DIR = "docs/daily_jsonl"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 
 def generate_event_key(event):
     """Create a unique key for an event using its name, date, and location."""
     key_source = f"{event.get('name', '')}|{event.get('startDate', '')}|{event.get('location', {}).get('name', '')}"
     return hashlib.sha1(key_source.encode("utf-8")).hexdigest()
+
 
 def write_event_jsonl(event):
     """Write a single event to its respective daily .jsonl file if not already present."""
@@ -38,7 +39,6 @@ def write_event_jsonl(event):
     if event_key not in existing_keys:
         with open(output_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(event, ensure_ascii=False) + "\n")
-
 
 
 def main():

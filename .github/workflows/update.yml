@@ -1,9 +1,9 @@
 name: Update JSON-LD Events
 
 on:
-  workflow_dispatch:  # Allows manual run
+  workflow_dispatch: # Allows manual run
   schedule:
-    - cron: '0 6 * * *'  # Runs daily at 6am UTC (~2am Toronto time)
+    - cron: "0 6 * * *" # Runs daily at 6am UTC (~2am Toronto time)
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: 📦 Install dependencies
         run: |
@@ -33,7 +33,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add data/
+          git add docs/
           git commit -m "🔄 Auto-update JSON-LD data $(date -u '+%Y-%m-%d %H:%M:%S')"
           git push
         env:
