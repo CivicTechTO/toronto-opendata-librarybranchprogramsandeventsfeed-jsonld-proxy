@@ -37,15 +37,22 @@ This will:
 
 - Fetch the latest events feed from the City of Toronto’s CKAN resource.
 - Transform each event into schema.org/Event JSON-LD format.
-- Write events to files in data/daily_jsonl/YYYY-MM-DD.jsonl, one file per event day.
+- Write events to files in docs/daily_jsonl/YYYY-MM-DD.jsonl, one file per event day.
 
 You can run this manually for initial population, or on a schedule for daily updates.
 
 ### Usage
 
-- All output data is stored under data/daily_jsonl/, split by event date.
+For each day:
+- All output data is stored under [docs/daily_jsonl/](docs/daily_jsonl/), split by event date.
 - Each .jsonl file contains one event per line in JSON-LD format.
 - You can serve these files directly via GitHub Pages as a static API, or use them as a backend for a lightweight frontend or Flask app.
+
+For upcoming:
+see [docs/upcoming.jsonld](docs/upcoming.jsonld)
+
+For all:
+see [docs/all.jsonld](docs/all.jsonld)
 
 ## About
 
