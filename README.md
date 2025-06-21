@@ -25,9 +25,9 @@ The result is a free, publicly hosted JSON-LD feed that enables developers, sear
 pip install -r requirements.txt
 ```
 
-**Generate the JSON-LD**
+**Generate the JSON Lines**
 
-To generate the full dataset of JSON-LD event records and write them to date-specific .jsonl files:
+To generate the full dataset of event records and write them to date-specific .jsonl files:
 
 ```zsh
 python scripts/generate_jsonld.py
@@ -41,9 +41,18 @@ This will:
 
 You can run this manually for initial population, or on a schedule for daily updates.
 
+**Generate the JSON-LD**
+
+To generate the full dataset of JSON-LD as indexes of all and upcoming:
+
+```zsh
+python build_indexes.py
+```
+
 ### Usage
 
 For each day:
+
 - All output data is stored under [docs/daily_jsonl/](docs/daily_jsonl/), split by event date.
 - Each .jsonl file contains one event per line in JSON-LD format.
 - You can serve these files directly via GitHub Pages as a static API, or use them as a backend for a lightweight frontend or Flask app.
