@@ -1,9 +1,9 @@
 import requests
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode, urlparse, urlunparse, parse_qs
 
-# Base URL for the City of Toronto's CKAN Open Data instance
+# Base configuration for Toronto Open Data CKAN API
 BASE_CKAN_URL = "https://ckan0.cf.opendata.inter.prod-toronto.ca"
-PACKAGE_NAME = "festivals-events"  # This is the CKAN "package" (dataset) name
+PACKAGE_NAME = "festivals-events"
 
 
 def get_latest_resource_url():
@@ -11,9 +11,9 @@ def get_latest_resource_url():
     Fetch the latest downloadable (non-datastore) resource URL from CKAN.
 
     Returns:
-        str: The URL of the first non-datastore resource in the package.
+        str: URL to the dataset resource file.
     Raises:
-        RuntimeError: If no suitable resource is found.
+        RuntimeError: If no valid non-datastore resource is found.
     """
     package_url = urljoin(BASE_CKAN_URL, "/api/3/action/package_show")
     params = {"id": PACKAGE_NAME}
@@ -24,47 +24,65 @@ def get_latest_resource_url():
     data = response.json()
 
     for resource in data["result"]["resources"]:
-        if not resource.get("datastore_active"):  # We only want direct file downloads
+        if not resource.get("datastore_active"):
+            print(f"🔗 Using resource URL: {resource['url']}")
             return resource["url"]
 
     raise RuntimeError("❌ No suitable non-datastore resource found in CKAN package.")
 
 
-def download_resource_data(resource_url, batch_size=500, max_pages=1000):
+def append_query_params(base_url, new_params):
     """
-    Download all paginated event data from the resource URL using ?limit and ?offset.
+    Append or update query parameters to a base URL safely.
 
     Args:
-        resource_url (str): The base data endpoint (e.g. from CKAN resource["url"])
-        batch_size (int): Number of records per page (default 500)
-        max_pages (int): Safety cap to avoid runaway loops
+        base_url (str): The original URL.
+        new_params (dict): Key-value query parameters to add or update.
 
     Returns:
-        list: All event entries combined across pages
+        str: URL with appended query parameters.
     """
-    print(f"⬇️ Downloading full event data from: {resource_url}")
+    parsed = urlparse(base_url)
+    existing = parse_qs(parsed.query)
+    existing.update({k: [str(v)] for k, v in new_params.items()})
+    encoded = urlencode(existing, doseq=True)
+    return urlunparse(parsed._replace(query=encoded))
 
-    all_events = []
-    offset = 0
-    page = 0
 
-    while page < max_pages:
-        paged_url = f"{resource_url}&limit={batch_size}&offset={offset}"
+def stream_resource_data(resource_url, batch_size=500):
+    """
+    Generator to stream paginated event data from the resource.
+
+    Args:
+        resource_url (str): Base CKAN resource URL (with or without query params).
+        batch_size (int): Number of events per page (default: 500).
+
+    Yields:
+        dict: Each event record.
+    """
+    print(f"⬇️ Streaming event data from: {resource_url}")
+
+    start = 1
+    total_yielded = 0
+    page = 1
+
+    while True:
+        paged_url = append_query_params(resource_url, {"start": start, "limit": batch_size})
+        print(f"🌐 Requesting: {paged_url}")
         response = requests.get(paged_url)
         response.raise_for_status()
         batch = response.json()
 
         if not batch:
-            break  # No more data
+            break
 
-        all_events.extend(batch)
-        print(f"📦 Page {page + 1}: {len(batch)} events")
+        print(f"📦 Page {page} | Start {start} | Events: {len(batch)}")
 
-        if len(batch) < batch_size:
-            break  # Last page
+        for item in batch:
+            yield item
+            total_yielded += 1
 
-        offset += batch_size
+        start += batch_size
         page += 1
 
-    print(f"✅ Downloaded {len(all_events)} total events")
-    return all_events
+    print(f"📊 Total events streamed: {total_yielded}")

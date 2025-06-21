@@ -1,35 +1,40 @@
-name: Update Events JSON-LD
+name: Update JSON-LD Events
 
 on:
+  workflow_dispatch:  # Allows manual run
   schedule:
-    - cron: "0 6 * * *" # Daily at 6:00 AM UTC
-  workflow_dispatch: # Manual trigger
+    - cron: '0 6 * * *'  # Runs daily at 6am UTC (~2am Toronto time)
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧾 Checkout Repository
-        uses: actions/checkout@v3
+      - name: 🧾 Checkout code
+        uses: actions/checkout@v4
 
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: '3.11'
 
-      - name: 📦 Upgrade pip & install dependencies
+      - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: ⚙️ Run JSON-LD Generator
+      - name: ⚙️ Generate daily event JSON-LD
         run: python scripts/generate_jsonld.py
 
-      - name: 📤 Commit & Push Changes
+      - name: 🔄 Build indexes (all.jsonld + upcoming.jsonld)
+        run: python scripts/build_indexes.py
+
+      - name: 🚀 Commit and push changes
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add docs/events.jsonld
-          git commit -m "🔄 Daily JSON-LD update" || echo "No changes to commit"
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/
+          git commit -m "🔄 Auto-update JSON-LD data $(date -u '+%Y-%m-%d %H:%M:%S')"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
